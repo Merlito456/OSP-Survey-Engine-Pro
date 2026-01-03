@@ -1,12 +1,13 @@
-const APP_CACHE = 'osp-survey-pro-app-v8';
+const APP_CACHE = 'osp-survey-pro-app-v9';
 const MAP_CACHE = 'osp-survey-pro-maps-v1';
 
-// App shell – cache BOTH possible entry points
+// ============================
+// App shell (SAFE FILES ONLY)
+// ============================
 const APP_SHELL = [
   './',
   './index.html',
-  './index.js',     // GitHub Pages entry
-  './index.tsx',    // Netlify entry
+  './index.js',        // ✅ single entry
   './metadata.json',
   './sw.js'
 ];
@@ -44,7 +45,7 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // 1️⃣ App navigation → index.html
+  // 1️⃣ SPA navigation → index.html
   if (req.mode === 'navigate') {
     event.respondWith(
       caches.match('./index.html').then(res => res || fetch(req))
@@ -52,7 +53,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2️⃣ Map tiles (stale-while-revalidate)
+  // 2️⃣ OpenStreetMap tiles (offline maps)
   if (url.hostname.includes('tile.openstreetmap.org')) {
     event.respondWith(
       caches.open(MAP_CACHE).then(cache =>
