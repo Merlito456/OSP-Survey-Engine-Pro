@@ -1,13 +1,13 @@
-const APP_CACHE = 'osp-app-v6';
+const APP_CACHE = 'osp-app-v7';
 const TILE_CACHE = 'osp-map-tiles-v1';
 
-// Cache ONLY local build assets
+// Only precache files that ALWAYS exist
 const PRECACHE = [
   './index.html',
   './manifest.json',
 ];
 
-// ---------- INSTALL ----------
+// ---------------- INSTALL ----------------
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_CACHE).then((cache) => cache.addAll(PRECACHE))
@@ -15,7 +15,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// ---------- ACTIVATE ----------
+// ---------------- ACTIVATE ----------------
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -29,35 +29,45 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ---------- FETCH ----------
+// ---------------- FETCH ----------------
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // 🚫 Ignore non-GET
+  // Only handle GET requests
   if (req.method !== 'GET') return;
 
-  // 🗺️ OpenStreetMap tiles (cache-first)
+  // ---------------- MAP TILES ----------------
+  // Cache OpenStreetMap tiles (cache-first)
   if (url.hostname.includes('tile.openstreetmap.org')) {
     event.respondWith(
       caches.open(TILE_CACHE).then(async (cache) => {
         const cached = await cache.match(req);
         if (cached) return cached;
 
-        const fresh = await fetch(req);
-        cache.put(req, fresh.clone());
-        return fresh;
+        try {
+          const fresh = await fetch(req);
+          cache.put(req, fresh.clone());
+          return fresh;
+        } catch {
+          return cached;
+        }
       })
     );
     return;
   }
 
-  // 🧭 SPA navigation — NETWORK FIRST
+  // ---------------- SPA NAVIGATION ----------------
+  // THIS IS THE CRITICAL FIX FOR /assets/ 404
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          caches.open(APP_CACHE).then((c) => c.put('./index.html', res.clone()));
+          // If the response is NOT OK (404, 500, etc)
+          // always fall back to index.html
+          if (!res || !res.ok) {
+            return caches.match('./index.html');
+          }
           return res;
         })
         .catch(() => caches.match('./index.html'))
@@ -65,7 +75,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 📦 Static assets — CACHE FIRST
+  // ---------------- STATIC ASSETS ----------------
+  // JS / CSS / images — cache first
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req))
   );
