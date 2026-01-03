@@ -1,19 +1,12 @@
-const APP_CACHE = 'osp-survey-pro-app-v7';
+const APP_CACHE = 'osp-survey-pro-app-v8';
 const MAP_CACHE = 'osp-survey-pro-maps-v1';
 
-// Detect host
-const IS_GITHUB_PAGES = self.location.hostname.endsWith('github.io');
-
-// Pick correct entry file
-const ENTRY_FILE = IS_GITHUB_PAGES
-  ? './index.js'   // GitHub Pages
-  : './index.tsx'; // Netlify
-
-// App shell (HOST-AWARE)
+// App shell – cache BOTH possible entry points
 const APP_SHELL = [
   './',
   './index.html',
-  ENTRY_FILE,
+  './index.js',     // GitHub Pages entry
+  './index.tsx',    // Netlify entry
   './metadata.json',
   './sw.js'
 ];
@@ -51,12 +44,7 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // 🚫 Never serve TSX on GitHub Pages
-  if (IS_GITHUB_PAGES && url.pathname.endsWith('.tsx')) {
-    return;
-  }
-
-  // 1️⃣ Navigation requests → app shell
+  // 1️⃣ App navigation → index.html
   if (req.mode === 'navigate') {
     event.respondWith(
       caches.match('./index.html').then(res => res || fetch(req))
@@ -80,7 +68,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 3️⃣ Everything else (cache-first + populate)
+  // 3️⃣ Cache-first for everything else
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
@@ -91,8 +79,9 @@ self.addEventListener('fetch', event => {
           networkRes.status === 200 &&
           (networkRes.type === 'basic' || networkRes.type === 'cors')
         ) {
-          const clone = networkRes.clone();
-          caches.open(APP_CACHE).then(cache => cache.put(req, clone));
+          caches.open(APP_CACHE).then(cache =>
+            cache.put(req, networkRes.clone())
+          );
         }
         return networkRes;
       });
