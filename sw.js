@@ -1,91 +1,58 @@
-const APP_CACHE = 'osp-survey-pro-app-v9';
-const MAP_CACHE = 'osp-survey-pro-maps-v1';
 
-// ============================
-// App shell (SAFE FILES ONLY)
-// ============================
-const APP_SHELL = [
+const CACHE_NAME = 'osp-survey-pro-v5-cache';
+const MAP_CACHE = 'osp-map-tiles';
+
+// Assets to cache immediately on install
+const PRECACHE_ASSETS = [
   './',
   './index.html',
-  './index.js',        // ✅ single entry
-  './metadata.json',
-  './sw.js'
+  'https://cdn.tailwindcss.com',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@100..800&display=swap'
 ];
 
-// ============================
-// INSTALL
-// ============================
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(APP_CACHE).then(cache => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE_ASSETS);
+    })
   );
   self.skipWaiting();
 });
 
-// ============================
-// ACTIVATE
-// ============================
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => ![APP_CACHE, MAP_CACHE].includes(k))
-          .map(k => caches.delete(k))
-      )
-    )
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter(name => name !== CACHE_NAME && name !== MAP_CACHE).map(name => caches.delete(name))
+      );
+    })
   );
-  self.clients.claim();
 });
 
-// ============================
-// FETCH
-// ============================
-self.addEventListener('fetch', event => {
-  const req = event.request;
-  const url = new URL(req.url);
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
 
-  // 1️⃣ SPA navigation → index.html
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      caches.match('./index.html').then(res => res || fetch(req))
-    );
-    return;
-  }
-
-  // 2️⃣ OpenStreetMap tiles (offline maps)
+  // Special handling for Map Tiles (Stale-while-revalidate)
   if (url.hostname.includes('tile.openstreetmap.org')) {
     event.respondWith(
-      caches.open(MAP_CACHE).then(cache =>
-        cache.match(req).then(cached => {
-          const fetchPromise = fetch(req).then(networkRes => {
-            cache.put(req, networkRes.clone());
-            return networkRes;
+      caches.open(MAP_CACHE).then((cache) => {
+        return cache.match(event.request).then((response) => {
+          const fetchPromise = fetch(event.request).then((networkResponse) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
           });
-          return cached || fetchPromise;
-        })
-      )
+          return response || fetchPromise;
+        });
+      })
     );
     return;
   }
 
-  // 3️⃣ Cache-first for everything else
+  // Default: Cache first, then network
   event.respondWith(
-    caches.match(req).then(cached => {
-      if (cached) return cached;
-
-      return fetch(req).then(networkRes => {
-        if (
-          networkRes &&
-          networkRes.status === 200 &&
-          (networkRes.type === 'basic' || networkRes.type === 'cors')
-        ) {
-          caches.open(APP_CACHE).then(cache =>
-            cache.put(req, networkRes.clone())
-          );
-        }
-        return networkRes;
-      });
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
     })
   );
 });
