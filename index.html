@@ -11,104 +11,76 @@
   <meta name="theme-color" content="#0f172a" />
   <title>OSP Survey Tool Pro</title>
 
-  <!-- PWA -->
+  <!-- ===============================
+       PWA
+       =============================== -->
   <link rel="manifest" href="./metadata.json" />
 
-  <!-- Tailwind -->
+  <!-- ===============================
+       Tailwind CDN
+       =============================== -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Import Map -->
+  <!-- ===============================
+       Fonts (optional but recommended)
+       =============================== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ===============================
+       Leaflet CSS (if using maps)
+       =============================== -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
+  <!-- ===============================
+       Import Map (browser-native)
+       =============================== -->
   <script type="importmap">
   {
     "imports": {
       "react": "https://esm.sh/react@19.2.3",
-      "react-dom/": "https://esm.sh/react-dom@19.2.3/"
+      "react-dom/": "https://esm.sh/react-dom@19.2.3/",
+      "lucide-react": "https://esm.sh/lucide-react@0.562.0",
+      "leaflet": "https://esm.sh/leaflet@1.9.4",
+      "react-leaflet": "https://esm.sh/react-leaflet@5.0.0",
+      "jszip": "https://esm.sh/jszip@3.10.1",
+      "@google/genai": "https://esm.sh/@google/genai@1.34.0"
     }
   }
   </script>
 
   <style>
-    body { background:#0f172a; }
+    body {
+      background: #0f172a;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+    }
+
+    .leaflet-container {
+      width: 100%;
+      height: 100%;
+      background-color: #f1f5f9;
+      outline: none;
+    }
   </style>
 </head>
 
-<body class="h-screen text-white flex items-center justify-center">
-
-  <!-- ===============================
-       SERVER SELECT OVERLAY
-       =============================== -->
-  <div id="server-select" class="fixed inset-0 flex items-center justify-center bg-black/80 hidden">
-    <div class="bg-slate-900 rounded-xl p-6 w-80 text-center space-y-4">
-      <h2 class="text-xl font-semibold">Select Server</h2>
-
-      <button
-        class="w-full py-2 rounded bg-emerald-600 hover:bg-emerald-500"
-        onclick="selectServer('github')"
-      >
-        GitHub Pages (Recommended)
-      </button>
-
-      <button
-        class="w-full py-2 rounded bg-sky-600 hover:bg-sky-500"
-        onclick="selectServer('netlify')"
-      >
-        Netlify (Backup)
-      </button>
-
-      <p class="text-xs text-slate-400">
-        You can change this later by clearing site data.
-      </p>
-    </div>
-  </div>
-
+<body class="h-screen overflow-hidden bg-white text-slate-900 antialiased">
   <!-- App root -->
   <div id="root"></div>
 
   <!-- ===============================
-       SERVER SELECTION LOGIC
+       SINGLE ENTRY POINT
        =============================== -->
-  <script type="module">
-    const SERVER_KEY = 'osp_server_choice';
-
-    const isGitHubPages = location.hostname.endsWith('github.io');
-    const isNetlify = location.hostname.endsWith('netlify.app');
-
-    function loadEntry(choice) {
-      const entry =
-        choice === 'github'
-          ? './index.js'
-          : './index.tsx';
-
-      import(entry).catch(err => {
-        console.error('Failed to load entry:', err);
-        alert('Failed to load selected server.');
-      });
-    }
-
-    window.selectServer = (choice) => {
-      localStorage.setItem(SERVER_KEY, choice);
-      document.getElementById('server-select').classList.add('hidden');
-      loadEntry(choice);
-    };
-
-    const saved = localStorage.getItem(SERVER_KEY);
-
-    // Auto-select based on host if already on it
-    if (isGitHubPages) {
-      localStorage.setItem(SERVER_KEY, 'github');
-      loadEntry('github');
-    } else if (isNetlify) {
-      localStorage.setItem(SERVER_KEY, 'netlify');
-      loadEntry('netlify');
-    }
-    // No choice yet → show selector
-    else if (!saved) {
-      document.getElementById('server-select').classList.remove('hidden');
-    }
-    // Load saved choice
-    else {
-      loadEntry(saved);
-    }
-  </script>
+  <script type="module" src="./index.js"></script>
 </body>
 </html>
