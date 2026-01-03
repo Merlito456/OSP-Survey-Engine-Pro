@@ -1,58 +1,72 @@
+const APP_CACHE = 'osp-app-v6';
+const TILE_CACHE = 'osp-map-tiles-v1';
 
-const CACHE_NAME = 'osp-survey-pro-v5-cache';
-const MAP_CACHE = 'osp-map-tiles';
-
-// Assets to cache immediately on install
-const PRECACHE_ASSETS = [
-  './',
+// Cache ONLY local build assets
+const PRECACHE = [
   './index.html',
-  'https://cdn.tailwindcss.com',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@100..800&display=swap'
+  './manifest.json',
 ];
 
+// ---------- INSTALL ----------
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
-    })
+    caches.open(APP_CACHE).then((cache) => cache.addAll(PRECACHE))
   );
   self.skipWaiting();
 });
 
+// ---------- ACTIVATE ----------
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME && name !== MAP_CACHE).map(name => caches.delete(name))
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => ![APP_CACHE, TILE_CACHE].includes(key))
+          .map((key) => caches.delete(key))
+      )
+    )
   );
+  self.clients.claim();
 });
 
+// ---------- FETCH ----------
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+  const req = event.request;
+  const url = new URL(req.url);
 
-  // Special handling for Map Tiles (Stale-while-revalidate)
+  // 🚫 Ignore non-GET
+  if (req.method !== 'GET') return;
+
+  // 🗺️ OpenStreetMap tiles (cache-first)
   if (url.hostname.includes('tile.openstreetmap.org')) {
     event.respondWith(
-      caches.open(MAP_CACHE).then((cache) => {
-        return cache.match(event.request).then((response) => {
-          const fetchPromise = fetch(event.request).then((networkResponse) => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
-          return response || fetchPromise;
-        });
+      caches.open(TILE_CACHE).then(async (cache) => {
+        const cached = await cache.match(req);
+        if (cached) return cached;
+
+        const fresh = await fetch(req);
+        cache.put(req, fresh.clone());
+        return fresh;
       })
     );
     return;
   }
 
-  // Default: Cache first, then network
+  // 🧭 SPA navigation — NETWORK FIRST
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          caches.open(APP_CACHE).then((c) => c.put('./index.html', res.clone()));
+          return res;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // 📦 Static assets — CACHE FIRST
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    caches.match(req).then((cached) => cached || fetch(req))
   );
 });
