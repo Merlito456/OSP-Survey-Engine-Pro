@@ -1,16 +1,26 @@
-const APP_CACHE = 'osp-survey-pro-app-v6';
+const APP_CACHE = 'osp-survey-pro-app-v7';
 const MAP_CACHE = 'osp-survey-pro-maps-v1';
 
-// App shell – MUST include entry module
+// Detect host
+const IS_GITHUB_PAGES = self.location.hostname.endsWith('github.io');
+
+// Pick correct entry file
+const ENTRY_FILE = IS_GITHUB_PAGES
+  ? './index.js'   // GitHub Pages
+  : './index.tsx'; // Netlify
+
+// App shell (HOST-AWARE)
 const APP_SHELL = [
   './',
   './index.html',
-  './index.tsx',
+  ENTRY_FILE,
   './metadata.json',
   './sw.js'
 ];
 
-// Install: cache core app files
+// ============================
+// INSTALL
+// ============================
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(APP_CACHE).then(cache => cache.addAll(APP_SHELL))
@@ -18,7 +28,9 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// ============================
+// ACTIVATE
+// ============================
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -32,12 +44,19 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch handler
+// ============================
+// FETCH
+// ============================
 self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // 1️⃣ Handle app navigation (CRITICAL)
+  // 🚫 Never serve TSX on GitHub Pages
+  if (IS_GITHUB_PAGES && url.pathname.endsWith('.tsx')) {
+    return;
+  }
+
+  // 1️⃣ Navigation requests → app shell
   if (req.mode === 'navigate') {
     event.respondWith(
       caches.match('./index.html').then(res => res || fetch(req))
@@ -45,7 +64,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2️⃣ Cache map tiles (stale-while-revalidate)
+  // 2️⃣ Map tiles (stale-while-revalidate)
   if (url.hostname.includes('tile.openstreetmap.org')) {
     event.respondWith(
       caches.open(MAP_CACHE).then(cache =>
@@ -61,7 +80,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 3️⃣ Cache-first for everything else (including CDN modules)
+  // 3️⃣ Everything else (cache-first + populate)
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
