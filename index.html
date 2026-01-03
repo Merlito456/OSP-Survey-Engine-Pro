@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
@@ -11,30 +12,54 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0f172a" />
 
-  <!-- PWA -->
-  <link rel="manifest" href="./metadata.json" />
-
   <title>OSP Survey Tool Pro</title>
 
-  <!-- Tailwind CDN -->
+  <!-- ===============================
+       GitHub → Netlify fallback guard
+       =============================== -->
+  <script>
+    window.__APP_BOOTED__ = false;
+
+    setTimeout(() => {
+      if (!window.__APP_BOOTED__) {
+        console.warn('Primary host failed, redirecting to Netlify…');
+        location.href = 'https://ospsurveyengine.netlify.app/';
+      }
+    }, 6000);
+  </script>
+
+  <!-- ===============================
+       PWA
+       =============================== -->
+  <link rel="manifest" href="./metadata.json" />
+
+  <!-- ===============================
+       Tailwind CDN
+       =============================== -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Fonts -->
+  <!-- ===============================
+       Fonts
+       =============================== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@100..800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap"
     rel="stylesheet"
   />
 
-  <!-- Leaflet CSS -->
+  <!-- ===============================
+       Leaflet CSS
+       =============================== -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     crossorigin=""
   />
 
-  <!-- Import Map (AI Studio style – REQUIRED) -->
+  <!-- ===============================
+       Import Map (AI Studio style)
+       =============================== -->
   <script type="importmap">
   {
     "imports": {
@@ -48,41 +73,27 @@
     }
   }
   </script>
-
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-      overscroll-behavior-y: contain;
-      background-color: #0f172a;
-    }
-
-    .leaflet-container {
-      width: 100%;
-      height: 100%;
-      background-color: #f1f5f9;
-      outline: none;
-    }
-
-    .btn-active:active {
-      transform: scale(0.95);
-      filter: brightness(0.85);
-      transition: all 0.1s ease;
-    }
-
-    .monospaced {
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .app-border-light { border-color: rgba(0,0,0,0.08); }
-    .app-border-dark { border-color: rgba(255,255,255,0.1); }
-  </style>
 </head>
 
 <body class="h-screen overflow-hidden bg-white text-slate-900 antialiased">
   <div id="root"></div>
 
-  <!-- IMPORTANT: RELATIVE PATH (GitHub Pages safe) -->
-  <script type="module" src="./index.tsx"></script>
+  <!-- ===============================
+       ENTRY SELECTOR
+       =============================== -->
+  <script type="module">
+    const isGitHubPages =
+      location.hostname.endsWith('github.io');
+
+    const entry = isGitHubPages
+      ? './index.js'   // GitHub Pages (no build)
+      : './index.tsx'; // Netlify (Vite build/dev)
+
+    import(entry)
+      .catch(err => {
+        console.error('Entry load failed:', err);
+        location.href = 'https://ospsurveyengine.netlify.app/';
+      });
+  </script>
 </body>
 </html>
