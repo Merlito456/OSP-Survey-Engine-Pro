@@ -1,5 +1,4 @@
 name = "osp-survey-tool-pro"
 compatibility_date = "2026-01-06"
 
-[pages]
-build_output_dir = "dist"
+pages_build_output_dir = "dist"
