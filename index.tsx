@@ -2,17 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// ✅ Register Service Worker safely (PWA + Android compatible)
-if ('serviceWorker' in navigator) {
+// Detect Android WebView
+const isAndroidWebView =
+  /Android/i.test(navigator.userAgent) &&
+  /wv|Version\/\d+\.\d+/i.test(navigator.userAgent);
+
+// Register Service Worker ONLY for real browsers (not WebView)
+if (
+  'serviceWorker' in navigator &&
+  import.meta.env.PROD &&
+  !isAndroidWebView
+) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('./sw.js', { scope: './' })
-      .then((registration) => {
-        console.log('✅ Service Worker registered with scope:', registration.scope);
-      })
-      .catch((error) => {
-        console.error('❌ Service Worker registration failed:', error);
-      });
+      .then(reg => console.log('✅ SW registered:', reg.scope))
+      .catch(err => console.error('❌ SW failed:', err));
   });
 }
 
