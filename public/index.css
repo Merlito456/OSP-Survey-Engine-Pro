@@ -1,0 +1,34 @@
+/* Main application styles */
+
+/* Tailwind-like utilities */
+.h-screen { height: 100vh; }
+.min-h-screen { min-height: 100vh; }
+.flex { display: flex; }
+.flex-1 { flex: 1 1 0%; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.text-center { text-align: center; }
+.bg-slate-900 { background-color: #0f172a; }
+.text-white { color: #ffffff; }
+.text-indigo-500 { color: #6366f1; }
+.text-indigo-300 { color: #a5b4fc; }
+.uppercase { text-transform: uppercase; }
+.tracking-widest { letter-spacing: 0.1em; }
+.px-8 { padding-left: 2rem; padding-right: 2rem; }
+.gap-6 { gap: 1.5rem; }
+
+/* Animations */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Loading states */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
