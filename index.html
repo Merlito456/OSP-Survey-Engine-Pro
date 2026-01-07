@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="metadata.json">
+  <title>OSP Survey Tool Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --secondary: #0f172a;
+      --accent: #10b981;
+    }
+    
+    /* WebView Reset: Prevents bouncing and accidental refreshes */
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+      position: fixed;
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #0f172a;
+      user-select: none; /* Prevents text selection while dragging markers */
+    }
+
+    .leaflet-container {
+      width: 100%;
+      height: 100%;
+      background-color: #f1f5f9;
+      outline: none;
+    }
+
+    /* Hardware Accelerated Transitions */
+    .animate-slide-up {
+      transform: translate3d(0, 100%, 0);
+      animation: slideUpNative 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes slideUpNative {
+      to { transform: translate3d(0, 0, 0); }
+    }
+
+    /* High Density Scroll Zones for Webkit */
+    .scroll-container {
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .scroll-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Custom Map Label Styling */
+    .custom-pole-label {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      color: white;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 4px 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+    }
+
+    /* Android Ripple Simulation */
+    .btn-active:active {
+      transform: scale(0.96);
+      filter: brightness(0.9);
+      transition: all 0.1s ease;
+    }
+
+    .safe-top { padding-top: env(safe-area-inset-top); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    
+    .bottom-sheet {
+      border-radius: 32px 32px 0 0;
+      box-shadow: 0 -20px 40px rgba(0,0,0,0.15);
+    }
+    
+    .monospaced {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .app-border-light { border-color: rgba(0,0,0,0.06); }
+    .app-border-dark { border-color: rgba(255,255,255,0.08); }
+
+    /* Input focus fixes for mobile */
+    input:focus, textarea:focus {
+      outline: none;
+      background-color: #fff !important;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "leaflet": "https://esm.sh/leaflet@^1.9.4",
+    "react-leaflet": "https://esm.sh/react-leaflet@^5.0.0",
+    "jszip": "https://esm.sh/jszip@^3.10.1",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="text-slate-900 overflow-hidden antialiased bg-white">
+  <div id="root" class="h-full w-full"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
